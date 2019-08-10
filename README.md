@@ -1,8 +1,8 @@
 # Reinforcement-Learning
 Single-agent Reinforcement Learning and Multi-agent Reinforcement Learning
 sourse movan python(add some notes)
-<h>Q-learning</h> 
-  value-based
+## Q-learning
+value-based
 off-policy
 Sarsa
 value-based
