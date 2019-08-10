@@ -1,6 +1,6 @@
 # Reinforcement-Learning
 Single-agent Reinforcement Learning and Multi-agent Reinforcement Learning
->>>sourse movan python(add some notes)
+sourse movan python(add some notes)
 ##Q-learning 
 #####value-based
 #####off-policy
