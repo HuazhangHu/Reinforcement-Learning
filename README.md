@@ -2,10 +2,10 @@
 Single-agent Reinforcement Learning and Multi-agent Reinforcement Learning
 sourse movan python(add some notes)
 ### Q-learning
-value-based
-off-policy
+value-based  
+off-policy  
 ### Sarsa
-value-based
+value-based  
 on-policy
 ### DQN
 It is the conbine of Q-learning and Deep learning .
