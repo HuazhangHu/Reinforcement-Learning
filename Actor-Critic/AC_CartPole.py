@@ -1,13 +1,5 @@
 """
-Actor-Critic using TD-error as the Advantage, Reinforcement Learning.
-
-The cart pole example. Policy is oscillated.
-
-View more on my tutorial page: https://morvanzhou.github.io/tutorials/
-
-Using:
-tensorflow 1.0
-gym 0.8.0
+based on morvan 
 """
 
 import numpy as np
@@ -40,7 +32,7 @@ class Actor(object):
         self.sess = sess
 
         self.s = tf.placeholder(tf.float32, [1, n_features], "state")#input
-        self.a = tf.placeholder(tf.int32, None, "act")
+        self.a = tf.placeholder(tf.int32, None, "act")#chosen actions index
         self.td_error = tf.placeholder(tf.float32, None, "td_error")  # TD_error
 
         with tf.variable_scope('Actor'):
@@ -60,11 +52,12 @@ class Actor(object):
                 bias_initializer=tf.constant_initializer(0.1),  # biases
                 name='acts_prob'
             )
+        #神经网络输出的是动作的概率
 
         with tf.variable_scope('exp_v'):
-            log_prob = tf.log(self.acts_prob[0,self.a])
+            log_prob = tf.log(self.acts_prob[0,self.a])#输出选择的动作的概率
             self.exp_v = tf.reduce_mean(log_prob * self.td_error)  # advantage (TD_error) guided loss
-
+        #exp_v=sum(td*logP)/n
         with tf.variable_scope('train'):
             self.train_op = tf.train.AdamOptimizer(lr).minimize(-self.exp_v)  # minimize(-exp_v) = maximize(exp_v)
 
@@ -72,7 +65,8 @@ class Actor(object):
         s = s[np.newaxis, :]
         feed_dict = {self.s: s, self.a: a, self.td_error: td}
         _, exp_v = self.sess.run([self.train_op, self.exp_v], feed_dict)
-        return exp_v
+        # return exp_v
+
         # 学习状态的价值 (state value), 不是行为的价值 (action value),
         # 计算 TD_error = (r + v_) - v,
         # 用 TD_error 评判这一步的行为有没有带来比平时更好的结果,
@@ -82,7 +76,7 @@ class Actor(object):
         s = s[np.newaxis, :]
         probs = self.sess.run(self.acts_prob, {self.s: s})   # get probabilities for all actions
         return np.random.choice(np.arange(probs.shape[1]), p=probs.ravel())   # return a int
-
+        #返回随机选取的动作的序号
 
 class Critic(object):
     def __init__(self, sess, n_features, lr=0.01):
@@ -115,17 +109,23 @@ class Critic(object):
 
         with tf.variable_scope('squared_TD_error'):#均方误差
             self.td_error = self.r + GAMMA * self.v_ - self.v
+            #这做的很巧妙，v_是先计算好的,v是用现在状态的神经网络输出的
             self.loss = tf.square(self.td_error)    # TD_error = (r+gamma*V_next) - V_eval
         with tf.variable_scope('train'):
             self.train_op = tf.train.AdamOptimizer(lr).minimize(self.loss)
+
 
     def learn(self, s, r, s_):
         #vector
         s, s_ = s[np.newaxis, :], s_[np.newaxis, :]
         #v估计 V_
         v_ = self.sess.run(self.v, {self.s: s_})
+        #输入的是下一个状态s_，得到的是下一个state的value，没有进行反向传递更新参数
+
         td_error, _ = self.sess.run([self.td_error, self.train_op],#把有关的tensor run的placeholder全部喂进去
                                           {self.s: s, self.v_: v_, self.r: r})
+        #输入神经网络的是现状态;用下一个state的value计算td_error
+        #这里经过了反向传递更新了参数
         return td_error
 
 
@@ -149,17 +149,16 @@ for i_episode in range(MAX_EPISODE):
         if RENDER: env.render()
 
         a = actor.choose_action(s)
-
+        #type(a)=int
         s_, r, done, info = env.step(a)
 
         if done:
             r = -20
 
         track_r.append(r)
-
         td_error = critic.learn(s, r, s_)  # gradient = grad[r + gamma * V(s_) - V(s)]
         actor.learn(s, a, td_error)     # true_gradient = grad[logPi(s,a) * td_error]
-
+        #critic的td_error(下一个状态的value计算）来指导actor的更新
         s = s_
         t += 1
 
